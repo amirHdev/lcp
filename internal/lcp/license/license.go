@@ -79,22 +79,39 @@ func (s *Service) GenerateLicense(ctx context.Context, license *lcp.License) err
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.coreURL+"/contents/"+license.PublicationID+"/license", bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/vnd.readium.lcp.license.v1.0+json")
-	if s.coreUser != "" {
-		req.SetBasicAuth(s.coreUser, s.corePass)
-	}
+	var resp *http.Response
+	var lastErr error
+	for attempt := 0; attempt < 5; attempt++ {
+		req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, s.coreURL+"/contents/"+license.PublicationID+"/license", bytes.NewReader(body))
+		if reqErr != nil {
+			return reqErr
+		}
+		req.Header.Set("Content-Type", "application/vnd.readium.lcp.license.v1.0+json")
+		if s.coreUser != "" {
+			req.SetBasicAuth(s.coreUser, s.corePass)
+		}
 
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return err
+		resp, lastErr = s.httpClient.Do(req)
+		if lastErr == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusOK {
+				lastErr = nil
+			} else {
+				lastErr = fmt.Errorf("lcp core returned %s", resp.Status)
+			}
+			break
+		}
+		if !strings.Contains(lastErr.Error(), "connect: connection refused") &&
+			!strings.Contains(lastErr.Error(), "connection reset by peer") &&
+			!strings.Contains(lastErr.Error(), "i/o timeout") {
+			return lastErr
+		}
+		if attempt < 4 {
+			time.Sleep(time.Duration(attempt+1) * 250 * time.Millisecond)
+		}
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("lcp core returned %s", resp.Status)
+	if lastErr != nil {
+		return lastErr
 	}
 
 	var generated struct {

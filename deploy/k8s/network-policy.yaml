@@ -16,6 +16,20 @@ spec:
         - protocol: TCP
           port: 8080
   egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: lcp-core
+      ports:
+        - protocol: TCP
+          port: 8989
+    - to:
+        - podSelector:
+            matchLabels:
+              app: lsd-core
+      ports:
+        - protocol: TCP
+          port: 8990
     - ports:
         - protocol: TCP
           port: 53
@@ -24,3 +38,15 @@ spec:
     - ports:
         - protocol: TCP
           port: 5432
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
