@@ -35,6 +35,7 @@ The admin and publisher catalog forms both support sharing metadata on the publi
 - `right_copy`
 
 Use `0` to disable the right. Leave the field empty to inherit the default from the publication when generating a license.
+If the passphrase field is left blank in the UI, the platform will generate one automatically for the license form.
 
 ## Publication Catalog
 

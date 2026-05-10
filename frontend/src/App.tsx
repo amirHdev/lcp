@@ -275,8 +275,9 @@ function App() {
     if (!licenseUserId.trim()) {
       throw new Error("user id is required");
     }
+    const effectivePassphrase = licensePassphrase.trim() || `lcp-${crypto.randomUUID().replace(/-/g, "").slice(0, 16)}`;
     if (!licensePassphrase.trim()) {
-      throw new Error("passphrase is required");
+      setLicensePassphrase(effectivePassphrase);
     }
 
     const response = await fetch(`${API_BASE}/graphql`, {
@@ -285,10 +286,10 @@ function App() {
       body: JSON.stringify({
         query:
           "mutation CreateLicense($publicationID: ID!, $userID: ID!, $passphrase: String!, $hint: String!, $rightPrint: Int, $rightCopy: Int, $startDate: String, $endDate: String) { createLicense(publicationID: $publicationID, userID: $userID, passphrase: $passphrase, hint: $hint, rightPrint: $rightPrint, rightCopy: $rightCopy, startDate: $startDate, endDate: $endDate) { id publicationID publicationURL passphrase hint rightPrint rightCopy startDate endDate } }",
-        variables: {
+          variables: {
           publicationID: licensePublicationId.trim(),
           userID: licenseUserId.trim(),
-          passphrase: licensePassphrase,
+          passphrase: effectivePassphrase,
           hint: licenseHint,
           rightPrint: parseOptionalNumber(licenseRightPrint),
           rightCopy: parseOptionalNumber(licenseRightCopy),

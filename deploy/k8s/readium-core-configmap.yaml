@@ -12,6 +12,7 @@ data:
       username: "admin"
       password: "admin_pass"
     lcp:
+      host: "0.0.0.0"
       port: 8989
       public_base_url: "http://lcp-core:8989"
       auth_file: "/srv/readium/config/htpasswd"
@@ -34,8 +35,10 @@ data:
       username: ""
       password: ""
     lcp:
+      host: "0.0.0.0"
       public_base_url: "http://lcp-core:8989"
     lsd:
+      host: "0.0.0.0"
       port: 8990
       public_base_url: "https://status.testmedical.ir"
       database: "sqlite3://file:/srv/readium/data/lsd.sqlite?cache=shared&mode=rwc"
