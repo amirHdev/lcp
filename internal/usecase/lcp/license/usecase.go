@@ -7,6 +7,7 @@ import (
 
 	userdomain "github.com/Mehrbod2002/lcp/internal/domain"
 	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
+	lcpencrypt "github.com/Mehrbod2002/lcp/internal/lcp/encrypt"
 	lcplicense "github.com/Mehrbod2002/lcp/internal/lcp/license"
 	"github.com/Mehrbod2002/lcp/internal/pkg/id"
 )
@@ -22,12 +23,13 @@ type licenseUsecase struct {
 	repo    lcp.LicenseRepository
 	pubs    lcp.PublicationRepository
 	users   userdomain.UserRepository
+	enc     lcpencrypt.Encrypter
 	lcp     *lcplicense.Service
 	baseURL string
 }
 
-func NewLicenseUsecase(repo lcp.LicenseRepository, pubs lcp.PublicationRepository, users userdomain.UserRepository, lcp *lcplicense.Service, baseURL string) LicenseUsecase {
-	return &licenseUsecase{repo: repo, pubs: pubs, users: users, lcp: lcp, baseURL: baseURL}
+func NewLicenseUsecase(repo lcp.LicenseRepository, pubs lcp.PublicationRepository, users userdomain.UserRepository, enc lcpencrypt.Encrypter, lcp *lcplicense.Service, baseURL string) LicenseUsecase {
+	return &licenseUsecase{repo: repo, pubs: pubs, users: users, enc: enc, lcp: lcp, baseURL: baseURL}
 }
 
 func (u *licenseUsecase) Create(ctx context.Context, input *lcp.LicenseInput) (*lcp.License, error) {
@@ -83,6 +85,15 @@ func (u *licenseUsecase) Create(ctx context.Context, input *lcp.LicenseInput) (*
 	}
 
 	err := u.lcp.GenerateLicense(ctx, license)
+	if err == lcplicense.ErrContentNotFound && u.enc != nil && u.pubs != nil {
+		if pub, findErr := u.pubs.FindByID(ctx, input.PublicationID); findErr == nil && pub != nil && pub.FilePath != "" {
+			if _, encErr := u.enc.Encrypt(pub.FilePath, pub.ID, pub.Title); encErr == nil {
+				err = u.lcp.GenerateLicense(ctx, license)
+			} else {
+				err = encErr
+			}
+		}
+	}
 	if err != nil {
 		return nil, err
 	}

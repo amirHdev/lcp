@@ -14,6 +14,8 @@ import (
 	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
 )
 
+var ErrContentNotFound = fmt.Errorf("lcp core content not found")
+
 type Service struct {
 	coreURL     string
 	coreUser    string
@@ -96,6 +98,8 @@ func (s *Service) GenerateLicense(ctx context.Context, license *lcp.License) err
 			defer resp.Body.Close()
 			if resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusOK {
 				lastErr = nil
+			} else if resp.StatusCode == http.StatusNotFound {
+				lastErr = ErrContentNotFound
 			} else {
 				lastErr = fmt.Errorf("lcp core returned %s", resp.Status)
 			}
