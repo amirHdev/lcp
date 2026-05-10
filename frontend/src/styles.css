@@ -216,6 +216,11 @@ button {
   min-width: 600px;
 }
 
+.admin-row {
+  grid-template-columns: minmax(150px, 1fr) minmax(220px, 1.2fr) 110px 120px 120px;
+  min-width: 740px;
+}
+
 .row-actions {
   display: flex;
   gap: 8px;

@@ -51,6 +51,20 @@ type PublicationListResponse = {
   publications: Publication[];
 };
 
+type AdminUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  verified: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type AdminUsersResponse = {
+  users: AdminUser[];
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
 function App() {
@@ -74,6 +88,7 @@ function App() {
   const [catalogFile, setCatalogFile] = useState<File | null>(null);
   const [catalogFilePreview, setCatalogFilePreview] = useState("Choose a publication file for the catalog.");
   const [publications, setPublications] = useState<Publication[]>([]);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [metrics, setMetrics] = useState<MetricsResponse | null>(null);
   const [message, setMessage] = useState("");
@@ -140,6 +155,14 @@ function App() {
     if (!response.ok) throw new Error(body.error || "publication list request failed");
     const payload = body as PublicationListResponse;
     setPublications(payload.publications || []);
+  }
+
+  async function refreshAdminUsers() {
+    const response = await fetch(`${API_BASE}/api/v1/admin/users`, { headers: authHeaders });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || "users request failed");
+    const payload = body as AdminUsersResponse;
+    setAdminUsers(payload.users || []);
   }
 
   async function processContent() {
@@ -229,6 +252,20 @@ function App() {
     await refreshPublications();
   }
 
+  async function setAdminUserVerified(userId: string, verified: boolean) {
+    const response = await fetch(
+      `${API_BASE}/api/v1/admin/users/${userId}/${verified ? "verify" : "unverify"}`,
+      {
+        method: "POST",
+        headers: authHeaders
+      }
+    );
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || "user update failed");
+    setMessage(`${body.name} marked ${verified ? "verified" : "unverified"}`);
+    await refreshAdminUsers();
+  }
+
   function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] || null;
     setSelectedFile(file);
@@ -261,8 +298,11 @@ function App() {
     if (token) {
       void run(refreshStatus);
       void run(refreshPublications);
+      if (role === "admin") {
+        void run(refreshAdminUsers);
+      }
     }
-  }, [token]);
+  }, [token, role]);
 
   return (
     <main className="shell">
@@ -429,6 +469,38 @@ function App() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="section-head">
+          <h2><Shield size={18} /> Admin Users</h2>
+          <button onClick={() => run(refreshAdminUsers)} disabled={role !== "admin"}>
+            Refresh Users
+          </button>
+        </div>
+        <div className="table">
+          <div className="row header admin-row">
+            <span>ID</span>
+            <span>Email</span>
+            <span>Role</span>
+            <span>Status</span>
+            <span>Action</span>
+          </div>
+          {adminUsers.length === 0 && <div className="file-meta">No users loaded yet.</div>}
+          {adminUsers.map((user) => (
+            <div className="row admin-row" key={user.id}>
+              <span>{user.id}</span>
+              <span>{user.email}</span>
+              <span>{user.role}</span>
+              <span>{user.verified ? "verified" : "pending"}</span>
+              <span className="row-actions">
+                <button onClick={() => run(() => setAdminUserVerified(user.id, !user.verified))} disabled={role !== "admin"}>
+                  {user.verified ? "Unverify" : "Verify"}
+                </button>
+              </span>
+            </div>
+          ))}
         </div>
       </section>
 

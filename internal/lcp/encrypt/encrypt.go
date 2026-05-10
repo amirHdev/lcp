@@ -3,6 +3,7 @@ package encrypt
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -70,6 +71,9 @@ func (e *ReadiumEncrypter) Encrypt(inputPath, contentID, filename string) (strin
 	cmd := exec.CommandContext(context.Background(), "/usr/local/bin/lcpencrypt", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		if recovered, ok := recoverEncryptedPath(outputDir, contentID, inputPath, string(output)); ok {
+			return recovered, nil
+		}
 		return "", fmt.Errorf("lcpencrypt failed: %w: %s", err, string(output))
 	}
 
@@ -81,4 +85,22 @@ func (e *ReadiumEncrypter) Encrypt(inputPath, contentID, filename string) (strin
 		expected = filepath.Join(outputDir, contentID+".epub")
 	}
 	return expected, nil
+}
+
+func recoverEncryptedPath(outputDir, contentID, inputPath, output string) (string, bool) {
+	if !strings.Contains(output, "Error notifying the LCP Server") && !strings.Contains(output, "connect: connection refused") {
+		return "", false
+	}
+	candidates := []string{
+		filepath.Join(outputDir, contentID+filepath.Ext(inputPath)),
+		filepath.Join(outputDir, contentID+".lcpdf"),
+		filepath.Join(outputDir, contentID+".epub"),
+		filepath.Join(outputDir, contentID+".lcp"),
+	}
+	for _, candidate := range candidates {
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+			return candidate, true
+		}
+	}
+	return "", false
 }

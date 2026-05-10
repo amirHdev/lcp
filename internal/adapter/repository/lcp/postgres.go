@@ -38,6 +38,54 @@ func EnsurePostgresSchema(ctx context.Context, db *sql.DB) error {
 		return nil
 	}
 	stmts := []string{
+		`CREATE TABLE IF NOT EXISTS users (
+			id VARCHAR(36) PRIMARY KEY,
+			email VARCHAR(255) UNIQUE NOT NULL,
+			password_hash TEXT NOT NULL,
+			role VARCHAR(32) NOT NULL DEFAULT 'user',
+			two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS publications (
+			id VARCHAR(36) PRIMARY KEY,
+			title VARCHAR(255) NOT NULL,
+			authors JSONB NOT NULL DEFAULT '[]'::jsonb,
+			language TEXT NOT NULL DEFAULT '',
+			subjects JSONB NOT NULL DEFAULT '[]'::jsonb,
+			tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+			status TEXT NOT NULL DEFAULT 'active',
+			file_path TEXT NOT NULL,
+			encrypted_path TEXT,
+			encrypted_uri TEXT NOT NULL DEFAULT '',
+			checksum TEXT NOT NULL DEFAULT '',
+			license_duration_days INTEGER NOT NULL DEFAULT 30,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS licenses (
+			id VARCHAR(36) PRIMARY KEY,
+			publication_id VARCHAR(36) NOT NULL,
+			user_id VARCHAR(36) NOT NULL,
+			passphrase TEXT NOT NULL,
+			hint TEXT NOT NULL,
+			publication_url TEXT NOT NULL,
+			right_print INTEGER,
+			right_copy INTEGER,
+			start_date TIMESTAMP,
+			end_date TIMESTAMP,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (publication_id) REFERENCES publications(id),
+			FOREIGN KEY (user_id) REFERENCES users(id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS lcp_processes (
+			id VARCHAR(36) PRIMARY KEY,
+			status VARCHAR(32) NOT NULL,
+			publication_id VARCHAR(36),
+			error TEXT,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (publication_id) REFERENCES publications(id)
+		)`,
 		`ALTER TABLE publications ADD COLUMN IF NOT EXISTS authors JSONB NOT NULL DEFAULT '[]'::jsonb`,
 		`ALTER TABLE publications ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE publications ADD COLUMN IF NOT EXISTS subjects JSONB NOT NULL DEFAULT '[]'::jsonb`,

@@ -68,6 +68,8 @@ func main() {
 	restHandler := rest.NewHandler(pubRepo, pubUsecase)
 	authHandler := rest.NewAuthHandler(cfg.JWT.Secret, cfg.Admin.Username, cfg.Admin.Password, cfg.Publisher.Username, cfg.Publisher.Password, cfg.JWT.Admin2FACode)
 	publicationHandler := rest.NewPublicationHandler(pubRepo, pubUsecase)
+	userStore := rest.NewAdminUserStore(cfg.DataDir)
+	adminUsersHandler := rest.NewAdminUsersHandler(userStore)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
@@ -86,6 +88,8 @@ func main() {
 	mux.Handle("/api/v1/lcp/process", authn.RequireRole("admin", "publisher", "user")(http.HandlerFunc(restHandler.Process)))
 	mux.Handle("/api/v1/lcp/status", authn.RequireRole("admin", "publisher", "user", "guest")(http.HandlerFunc(restHandler.Status)))
 	mux.Handle("/api/v1/admin/metrics", authn.RequireRole("admin")(http.HandlerFunc(restHandler.Metrics)))
+	mux.Handle("/api/v1/admin/users", authn.RequireRole("admin")(adminUsersHandler))
+	mux.Handle("/api/v1/admin/users/", authn.RequireRole("admin")(adminUsersHandler))
 
 	gqlHandler := graphql.NewHandler(&graphql.Resolver{
 		PublicationUsecase: pubUsecase,

@@ -121,6 +121,20 @@ X-2FA-Code: <configured-code>
 
 The response includes uptime, process count, and request counters.
 
+## Admin Users
+
+`GET /api/v1/admin/users`
+
+Returns the admin-visible user list.
+
+`POST /api/v1/admin/users/{userId}/verify`
+
+Marks a user verified.
+
+`POST /api/v1/admin/users/{userId}/unverify`
+
+Marks a user unverified.
+
 ## API Docs
 
 Swagger/OpenAPI is exposed by the running service at:

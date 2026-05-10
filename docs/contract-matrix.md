@@ -12,7 +12,7 @@ This matrix is the strict read against the contract PDF and the two appendices, 
 | Publication catalog | In appendix task for managing publications | Yes | REST endpoints added for list/get/create/update/activate/deactivate. |
 | Publisher flow | Third-party publisher access | Yes | Implemented as a simple publisher login plus catalog workspace. |
 | Publisher signup / verification UI | Not explicit in the appendices | Partial | No dedicated approval workflow yet; this is the main uncertain product gap. |
-| User verification page | Not explicit in the appendices | No | If the client expects an admin page to verify users, that is not yet a contract-backed requirement. |
+| User verification page | Not explicit in the appendices | Yes | Implemented as a simple admin-visible user list with verify/unverify actions. |
 | GraphQL | Publication/license workflows | Yes | Kept for integrations and future systems like WordPress. |
 | License/user lookup | Status server style license lookup | Yes | `/api/v1/licenses/{licenseId}/user` exposed. |
 | Content download | Publication content download endpoint | Yes | `/publications/{publicationId}/content` exposed. |
@@ -34,4 +34,4 @@ The platform is implemented for:
 - user/process/status/content flows
 - monitoring, GitOps, and Kubernetes deployment
 
-The only material uncertainty left is whether the client wants a dedicated publisher onboarding/approval UI and a separate admin user-verification page. Those are sensible extensions, but they are not clearly mandated in the appendices I checked.
+The only material uncertainty left is whether the client wants a dedicated publisher onboarding/approval workflow beyond simple login, because that is not clearly mandated in the appendices I checked.
