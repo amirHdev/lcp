@@ -6,13 +6,13 @@ resources:
 images:
   - name: registry.example.com/lcp/lcp-server
     newName: registry.testmedical.ir:5000/lcp-server
-    newTag: staging-v20
+    newTag: staging-v21
   - name: registry.example.com/lcp/lcp-server-core
     newName: registry.testmedical.ir:5000/lcp-server
-    newTag: staging-v20
+    newTag: staging-v21
   - name: registry.example.com/lcp/lcp-admin-ui
     newName: registry.testmedical.ir:5000/lcp-admin-ui
-    newTag: staging-v16
+    newTag: staging-v21
 labels:
   - pairs:
       environment: staging

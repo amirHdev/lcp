@@ -613,6 +613,80 @@
         }
       }
     },
+    "/licenses/{licenseId}/status": {
+      "get": {
+        "summary": "Readium license status document",
+        "operationId": "getLicenseStatusDocument",
+        "security": [],
+        "parameters": [
+          {
+            "name": "licenseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Readium license status document",
+            "content": {
+              "application/vnd.readium.license.status.v1.0+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseStatusDocumentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/licenses/{licenseId}/lcpl": {
+      "get": {
+        "summary": "Download the Readium LCPL license document",
+        "operationId": "downloadLicenseLcpl",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "licenseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LCPL license document",
+            "content": {
+              "application/vnd.readium.lcp.license.v1.0+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/License"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
     "/publications/{publicationId}/content": {
       "get": {
         "summary": "Download encrypted publication content",

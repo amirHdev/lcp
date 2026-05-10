@@ -32,6 +32,55 @@ spec:
                 name: lcp-server
                 port:
                   number: 80
+          - path: /licenses
+            pathType: Prefix
+            backend:
+              service:
+                name: lcp-server
+                port:
+                  number: 80
+          - path: /swagger.yaml
+            pathType: Prefix
+            backend:
+              service:
+                name: lcp-server
+                port:
+                  number: 80
+          - path: /swagger.json
+            pathType: Prefix
+            backend:
+              service:
+                name: lcp-server
+                port:
+                  number: 80
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:
+                name: lcp-server
+                port:
+                  number: 80
+          - path: /healthz
+            pathType: Prefix
+            backend:
+              service:
+                name: lcp-server
+                port:
+                  number: 80
+          - path: /readyz
+            pathType: Prefix
+            backend:
+              service:
+                name: lcp-server
+                port:
+                  number: 80
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: lcp-server
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:
