@@ -5,6 +5,8 @@ resources:
   - namespace.yaml
   - prometheus-config.yaml
   - prometheus-pvc.yaml
+  - prometheus-auth-secret.yaml
+  - prometheus-middleware.yaml
   - prometheus-deployment.yaml
   - prometheus-service.yaml
   - prometheus-ingress.yaml
