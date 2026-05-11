@@ -7,13 +7,13 @@ resources:
 images:
   - name: registry.example.com/lcp/lcp-server
     newName: registry.testmedical.ir:5000/lcp-server
-    newTag: prod-v23
+    newTag: prod-v24
   - name: registry.example.com/lcp/lcp-server-core
     newName: registry.testmedical.ir:5000/lcp-server
-    newTag: prod-v23
+    newTag: prod-v24
   - name: registry.example.com/lcp/lcp-admin-ui
     newName: registry.testmedical.ir:5000/lcp-admin-ui
-    newTag: prod-v23
+    newTag: prod-v24
 labels:
   - pairs:
       environment: prod
