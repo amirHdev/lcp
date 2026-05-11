@@ -15,3 +15,4 @@ resources:
   - grafana-deployment.yaml
   - grafana-service.yaml
   - grafana-ingress.yaml
+  - node-exporter.yaml

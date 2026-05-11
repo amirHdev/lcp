@@ -31,3 +31,8 @@ data:
         static_configs:
           - targets:
               - lcp-server.lcp-prod.svc.cluster.local:80
+
+      - job_name: node
+        static_configs:
+          - targets:
+              - node-exporter.monitoring.svc.cluster.local:9100
