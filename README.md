@@ -4,35 +4,31 @@ Lightweight License Content Protection (LCP) server that exposes REST and GraphQ
 
 ## Features
 
-- Contract REST endpoints at `/api/v1/lcp/process`, `/api/v1/lcp/status`, and `/api/v1/admin/metrics`.
-- JWT authentication with RBAC roles (`admin`, `publisher`, `user`, `guest`) and optional admin 2FA via `X-2FA-Code` on `/api/v1/admin/*`.
-- GraphQL endpoint at `/graphql` for managing publications and licenses.
-- Pluggable encryption interface backed by the upstream Readium `lcpencrypt` tool for real LCP publication processing.
-- In-memory repositories by default and JSON-backed metadata persistence when `DATA_DIR` is configured.
-- Download endpoint at `/publications/{id}/content` for clients to retrieve encrypted assets using the URLs returned on licenses.
-- Deployment assets for Docker, Kubernetes probes, PVCs, HPA, NetworkPolicy, backup CronJob, and ArgoCD GitOps flows.
-- Self-hosted registry manifests in `deploy/registry`.
-- React/TypeScript admin UI in `frontend` for processing content, viewing status, and checking admin metrics.
-- CI pipelines that format-check, vet, test, scan with Trivy, build, and deploy the container image.
+- Endpoints for the contract REST API located at `/api/v1/lcp/process`, `/api/v1/lcp/status`, and `/api/v1/admin/metrics`.
+- JWT auth with RBAC roles (admin, publisher, user, guest) and 2FA for admin on `/api/v1/admin/*` via `X-2FA-Code`.
+- The GraphQL API endpoint available at `/graphql` for publishing and licensing.
+- The pluggable encryption library with support for upstream LCP tool `lcpencrypt` for handling real LCP publication operations.
+- In-memory repository implementations with optional JSON-based persistence in `DATA_DIR`.
+- Endpoint `/publications/{id}/content` where the client can download encrypted assets by following links from licenses.
+- Deployment artefacts for Docker, Kubernetes liveness and readiness probes, PVCs, HPA, Network Policy, backup CronJob, and ArgoCD GitOps pipeline.
+- Registry manifests of the self-hosted registry images in `deploy/registry`.
+- React/TypeScript frontend with an admin UI for processing publications, viewing status, and metrics in `frontend`.
+- CI pipelines that run the formatter, vet, tests, Trivy security scanning, builds, and deploys the Docker container image.
 
-## Configuration
+## Configurations
 
-Set the following environment variables (see `.env.example & .env.local` for defaults):
+Define the below environment variables (check `.env.example & .env.local` for default values):
 
-- `DB_DSN`: Database connection string (used by adapters that expect persistent storage).
-- `LCP_PROFILE`: `basic` or `production`.
-- `LCP_CERTIFICATE` / `LCP_PRIVATE_KEY`: Paths to DRM keys/certificates.
-- `LCP_STORAGE_MODE`: `fs` (default) or `s3`.
-- `LCP_STORAGE_FS_DIR`: Target directory for encrypted assets.
-- `LCP_S3_REGION`, `LCP_S3_BUCKET`, `LCP_S3_ACCESS_KEY`, `LCP_S3_SECRET_KEY`: S3 storage settings when `LCP_STORAGE_MODE=s3`.
-- `JWT_SECRET`: Secret for future JWT-protected endpoints.
-- `ADMIN_2FA_CODE`: Optional code required for admin role requests.
-- `SERVER_PORT`: Listen address (defaults to `:8080`).
-- `PUBLIC_BASE_URL`: Public base URL used to generate download links (defaults to `http://localhost:PORT`).
-- `LCP_PROVIDER_URI`: Provider URI embedded in generated LCP licenses.
-- `LCP_CORE_URL`: Internal Readium LCP core URL.
-- `STATUS_BASE_URL`: Public Readium status server URL.
-- `DATA_DIR`: Directory used for JSON-backed metadata persistence.
+- `DB_DSN`: Data source name for database connections (required if used by persistent storage adapter).
+- `LCP_PROFILE`: Either `basic` or `production`.
+- `LCP_CERTIFICATE`/`LCP_PRIVATE_KEY`: Path for DRM certificates/keys.
+- `LCP_STORAGE_MODE`: Can be either `fs`(default) or `s3`.
+- `LCP_STORAGE_FS_DIR`: The destination directory for storage of encrypted files when `LCP_STORAGE_MODE` is set to `fs`.
+- `LCP_S3_REGION`, `LCP_S3_BUCKET`, `LCP_S3_ACCESS_KEY`, `LCP_S3_SECRET_KEY`: Required when using S3-based storage (`LCP_STORAGE_MODE=s3`).
+- `JWT_SECRET`: Secret for any JWT-secured APIs created in the future.
+- `ADMIN_2FA_CODE`: Code that may be required for admin roles (optional).
+- `SERVER_PORT`: Address for listening service (default `:8080`).
+- `PUBLIC_BASE_URL`: Public base URL used to construct download URL (default `http://localhost:PORT`).
 
 ## Local development
 
@@ -109,8 +105,8 @@ Apply the manifests with Kustomize:
 kubectl apply -k deploy/overlays/prod
 ```
 
-The deployment uses K3s-friendly defaults: Traefik ingress, local-path storage, and built-in cluster components. Update the overlay image references and hostnames for your environment.
-Images are expected to live in the self-hosted registry at `registry.testmedical.ir:5000`.
+K3s-compatible defaults are used in the deployment: ingress traefik, storage local-path, and built-in cluster components. Change the overlay image links and hostnames as required.
+Images are supposed to be stored in the registry hosted internally on `registry.testmedical.ir:5000`.
 
 ## ArgoCD
 
@@ -119,8 +115,6 @@ The ArgoCD root application at `deploy/argocd/root-application.yaml` continuousl
 ```bash
 kubectl apply -n argocd -f deploy/argocd/root-application.yaml
 ```
-
-Namespaces `lcp-dev`, `lcp-staging`, and `lcp-prod` will be created automatically, and changes merged to the repo will propagate to the cluster.
 
 ## GitLab CI/CD
 
