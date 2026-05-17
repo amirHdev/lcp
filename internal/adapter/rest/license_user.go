@@ -1,6 +1,8 @@
 package rest
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 	"strings"
 
@@ -41,10 +43,18 @@ func LicenseUserData(licenses usecaseLicense.LicenseUsecase) http.HandlerFunc {
 
 		payload := userDataPayload{
 			ID:             lic.UserID,
-			PassphraseHash: lic.PassphraseHash,
+			PassphraseHash: lcpPassphraseHash(lic.Passphrase),
 			Hint:           lic.Hint,
 		}
 
 		writeJSON(w, http.StatusOK, payload)
 	}
+}
+
+// lcpPassphraseHash returns the Readium LCP user key hash.
+// LCP requires SHA-256 here for interoperability with LCP-compliant readers.
+// This is not an account-password storage hash.
+func lcpPassphraseHash(value string) string {
+	sum := sha256.Sum256([]byte(value))
+	return hex.EncodeToString(sum[:])
 }
