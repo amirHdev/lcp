@@ -6,7 +6,7 @@ stages:
   - deploy
 
 variables:
-  GO_VERSION: "1.22"
+  GO_VERSION: "1.26"
   REGISTRY_IMAGE: "$CI_REGISTRY_IMAGE/lcp-server"
 
 lint:
