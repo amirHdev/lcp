@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Mehrbod2002/lcp/internal/auth"
+	"github.com/amirhdev/ebook-lcp-server/internal/auth"
 )
 
 type AuthHandler struct {

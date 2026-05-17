@@ -8,11 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
 )
 
 var ErrContentNotFound = fmt.Errorf("lcp core content not found")
@@ -104,7 +105,11 @@ func (s *Service) GenerateLicense(ctx context.Context, license *lcp.License) err
 
 		resp, lastErr = s.httpClient.Do(req)
 		if lastErr == nil {
-			defer resp.Body.Close()
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					log.Printf("close rows: %v", err)
+				}
+			}()
 
 			if resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusOK {
 				lastErr = nil
@@ -181,7 +186,11 @@ func (s *Service) RevokeLicense(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("close rows: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK &&
 		resp.StatusCode != http.StatusNoContent &&

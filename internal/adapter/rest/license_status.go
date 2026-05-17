@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-	"time"
 
-	usecaseLicense "github.com/Mehrbod2002/lcp/internal/usecase/lcp/license"
+	usecaseLicense "github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/license"
 )
 
 type UpdatedField struct {
@@ -63,11 +62,6 @@ func LicenseStatusDocument(licenses usecaseLicense.LicenseUsecase) http.HandlerF
 		host := r.Host
 		self := scheme + "://" + host + "/licenses/" + lic.ID + "/status"
 		licenseLink := "https://yourdomain.com/licenses/" + lic.ID + ".lcpl"
-
-		updatedTime := lic.CreatedAt
-		if updatedTime.IsZero() {
-			updatedTime = time.Now().UTC()
-		}
 
 		w.Header().Set("Content-Type", "application/vnd.readium.license.status.v1.0+json")
 		w.WriteHeader(http.StatusOK)

@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
-	"github.com/Mehrbod2002/lcp/internal/pkg/id"
-	usecasePublication "github.com/Mehrbod2002/lcp/internal/usecase/lcp/publication"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/pkg/id"
+	usecasePublication "github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/publication"
 )
 
 type Handler struct {
@@ -180,7 +180,7 @@ func (h *Handler) PrometheusMetrics(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "lcp_process_results_total{status=\"failed\"} %d\n", metrics.ProcessesFail)
 }
 
-func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Healthz(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
 )
 
 // NewHandler wires a lightweight GraphQL-compatible endpoint without external dependencies.

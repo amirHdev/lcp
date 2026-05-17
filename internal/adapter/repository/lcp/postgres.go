@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"time"
 
-	userdomain "github.com/Mehrbod2002/lcp/internal/domain"
-	domain "github.com/Mehrbod2002/lcp/internal/domain/lcp"
+	userdomain "github.com/amirhdev/ebook-lcp-server/internal/domain"
+	domain "github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -32,7 +33,11 @@ func OpenPostgres(ctx context.Context, dsn string) (*sql.DB, error) {
 	db.SetMaxIdleConns(10)
 	db.SetConnMaxLifetime(30 * time.Minute)
 	if err := db.PingContext(ctx); err != nil {
-		_ = db.Close()
+		defer func() {
+			if err := db.Close(); err != nil {
+				log.Printf("close rows: %v", err)
+			}
+		}()
 		return nil, err
 	}
 	return db, nil
@@ -173,7 +178,11 @@ func (r *postgresPublicationRepository) FindAll(ctx context.Context) ([]*domain.
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("close rows: %v", err)
+		}
+	}()
 
 	var pubs []*domain.Publication
 	for rows.Next() {
@@ -253,7 +262,11 @@ func (r *postgresLicenseRepository) FindByPublication(ctx context.Context, publi
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("close rows: %v", err)
+		}
+	}()
 
 	var licenses []*domain.License
 	for rows.Next() {

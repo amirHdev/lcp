@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	usecaseLicense "github.com/Mehrbod2002/lcp/internal/usecase/lcp/license"
+	usecaseLicense "github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/license"
 )
 
 type LCPLProvider interface {

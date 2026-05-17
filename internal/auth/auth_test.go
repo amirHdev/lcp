@@ -48,7 +48,7 @@ func TestRequireRoleAllowsAdminWithoutTwoFactorOnNonAdminEndpoint(t *testing.T) 
 	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
 
-	handler := mw.RequireRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := mw.RequireRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	handler.ServeHTTP(rec, req)
@@ -69,7 +69,7 @@ func TestRequireRoleRequiresTwoFactorOnAdminEndpoint(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
 
-	handler := mw.RequireRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := mw.RequireRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	handler.ServeHTTP(rec, req)

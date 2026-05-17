@@ -1,3 +1,4 @@
+// Package loggers provides structured logging utilities used across the application,
 package loggers
 
 import "log"

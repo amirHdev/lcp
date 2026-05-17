@@ -10,14 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
 )
 
 type fakePublicationUsecase struct{}
 
 type fakePublicationRepo struct{}
 
-func (fakePublicationUsecase) UploadAndEncrypt(ctx context.Context, title string, file io.Reader) (*lcp.Publication, error) {
+func (fakePublicationUsecase) UploadAndEncrypt(_ context.Context, title string, file io.Reader) (*lcp.Publication, error) {
 	return &lcp.Publication{
 		ID:            "pub-1",
 		Title:         title,
@@ -27,11 +27,11 @@ func (fakePublicationUsecase) UploadAndEncrypt(ctx context.Context, title string
 	}, nil
 }
 
-func (fakePublicationUsecase) GetAll(ctx context.Context) ([]*lcp.Publication, error) {
+func (fakePublicationUsecase) GetAll(_ context.Context) ([]*lcp.Publication, error) {
 	return nil, nil
 }
 
-func (fakePublicationUsecase) GetByID(ctx context.Context, id string) (*lcp.Publication, error) {
+func (fakePublicationUsecase) GetByID(_ context.Context, id string) (*lcp.Publication, error) {
 	return nil, nil
 }
 

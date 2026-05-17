@@ -6,7 +6,7 @@ metadata:
 spec:
   description: LCP server and admin UI environments
   sourceRepos:
-    - https://github.com/amirHdev/lcp.git
+    - https://github.com/amirhdev/ebook-lcp-server.git
   destinations:
     - namespace: argocd
       server: https://kubernetes.default.svc

@@ -1,6 +1,6 @@
-module github.com/Mehrbod2002/lcp
+module github.com/amirhdev/ebook-lcp-server
 
-go 1.25.0
+go 1.26.3
 
 require github.com/jackc/pgx/v5 v5.9.2
 

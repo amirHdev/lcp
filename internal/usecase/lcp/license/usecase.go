@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	userdomain "github.com/Mehrbod2002/lcp/internal/domain"
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
-	lcpencrypt "github.com/Mehrbod2002/lcp/internal/lcp/encrypt"
-	lcplicense "github.com/Mehrbod2002/lcp/internal/lcp/license"
-	"github.com/Mehrbod2002/lcp/internal/pkg/id"
+	userdomain "github.com/amirhdev/ebook-lcp-server/internal/domain"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
+	lcpencrypt "github.com/amirhdev/ebook-lcp-server/internal/lcp/encrypt"
+	lcplicense "github.com/amirhdev/ebook-lcp-server/internal/lcp/license"
+	"github.com/amirhdev/ebook-lcp-server/internal/pkg/id"
 )
 
 type LicenseUsecase interface {
@@ -19,12 +19,17 @@ type LicenseUsecase interface {
 	Revoke(ctx context.Context, id string) error
 }
 
+type lcpService interface {
+	GenerateLicense(ctx context.Context, license *lcp.License) error
+	RevokeLicense(ctx context.Context, id string) error
+}
+
 type licenseUsecase struct {
 	repo    lcp.LicenseRepository
 	pubs    lcp.PublicationRepository
 	users   userdomain.UserRepository
 	enc     lcpencrypt.Encrypter
-	lcp     *lcplicense.Service
+	lcp     lcpService
 	baseURL string
 }
 

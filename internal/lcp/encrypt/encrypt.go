@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Mehrbod2002/lcp/internal/config"
+	"github.com/amirhdev/ebook-lcp-server/internal/config"
 )
 
 // Encrypter defines the behavior required by the publication use case.
@@ -101,7 +101,8 @@ func recoverEncryptedPath(outputDir, contentID, inputPath, output string) (strin
 		if strings.TrimSpace(dir) == "" {
 			continue
 		}
-		candidates = append(candidates,
+		candidates = append(
+			candidates,
 			filepath.Join(dir, contentID+filepath.Ext(inputPath)),
 			filepath.Join(dir, contentID+".lcpdf"),
 			filepath.Join(dir, contentID+".epub"),

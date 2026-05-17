@@ -1,0 +1,30 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - gocyclo
+    - revive
+
+linters-settings:
+  gocyclo:
+    min-complexity: 30
+
+  revive:
+    ignore-generated-header: true
+    rules:
+      - name: package-comments
+        disabled: true
+
+      - name: exported
+        disabled: true
+
+      - name: unused-parameter
+        disabled: true
+
+      - name: blank-imports
+        disabled: true
+
+issues:
+  exclude-files:
+    - "internal/adapter/graphql/generated.go"

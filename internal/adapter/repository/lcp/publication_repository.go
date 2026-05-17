@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
 )
 
 type PublicationRepository interface {
@@ -35,7 +35,7 @@ func NewPersistentPublicationRepository(path string) (PublicationRepository, err
 	return repo, nil
 }
 
-func (r *publicationRepository) Save(ctx context.Context, pub *lcp.Publication) error {
+func (r *publicationRepository) Save(_ context.Context, pub *lcp.Publication) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	pub.UpdatedAt = time.Now()
@@ -53,7 +53,7 @@ func (r *publicationRepository) Save(ctx context.Context, pub *lcp.Publication) 
 	return r.persistLocked()
 }
 
-func (r *publicationRepository) FindAll(ctx context.Context) ([]*lcp.Publication, error) {
+func (r *publicationRepository) FindAll(_ context.Context) ([]*lcp.Publication, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	pubs := make([]*lcp.Publication, len(r.publications))
@@ -61,7 +61,7 @@ func (r *publicationRepository) FindAll(ctx context.Context) ([]*lcp.Publication
 	return pubs, nil
 }
 
-func (r *publicationRepository) FindByID(ctx context.Context, id string) (*lcp.Publication, error) {
+func (r *publicationRepository) FindByID(_ context.Context, id string) (*lcp.Publication, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

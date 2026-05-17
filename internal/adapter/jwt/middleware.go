@@ -1,3 +1,4 @@
+// Package jwt provides JWT middleware utilities.
 package jwt
 
 import "net/http"

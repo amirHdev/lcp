@@ -8,16 +8,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Mehrbod2002/lcp/internal/adapter/graphql"
-	"github.com/Mehrbod2002/lcp/internal/adapter/repository/lcp"
-	"github.com/Mehrbod2002/lcp/internal/adapter/rest"
-	"github.com/Mehrbod2002/lcp/internal/auth"
-	"github.com/Mehrbod2002/lcp/internal/config"
-	userdomain "github.com/Mehrbod2002/lcp/internal/domain"
-	lcpencrypt "github.com/Mehrbod2002/lcp/internal/lcp/encrypt"
-	lcplicense "github.com/Mehrbod2002/lcp/internal/lcp/license"
-	"github.com/Mehrbod2002/lcp/internal/usecase/lcp/license"
-	"github.com/Mehrbod2002/lcp/internal/usecase/lcp/publication"
+	"github.com/amirhdev/ebook-lcp-server/internal/adapter/graphql"
+	"github.com/amirhdev/ebook-lcp-server/internal/adapter/repository/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/adapter/rest"
+	"github.com/amirhdev/ebook-lcp-server/internal/auth"
+	"github.com/amirhdev/ebook-lcp-server/internal/config"
+	userdomain "github.com/amirhdev/ebook-lcp-server/internal/domain"
+	lcpencrypt "github.com/amirhdev/ebook-lcp-server/internal/lcp/encrypt"
+	lcplicense "github.com/amirhdev/ebook-lcp-server/internal/lcp/license"
+	"github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/license"
+	"github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/publication"
 )
 
 // @title LCP License Server API
@@ -49,7 +49,11 @@ func main() {
 		panic(err)
 	}
 	if db != nil {
-		defer db.Close()
+		defer func() {
+			if err := db.Close(); err != nil {
+				log.Printf("close rows: %v", err)
+			}
+		}()
 		if err := lcp.EnsurePostgresSchema(context.Background(), db); err != nil {
 			panic(err)
 		}

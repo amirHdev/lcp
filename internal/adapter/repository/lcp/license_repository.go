@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
 )
 
 type LicenseRepository interface {

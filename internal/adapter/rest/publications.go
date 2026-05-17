@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Mehrbod2002/lcp/internal/auth"
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
-	"github.com/Mehrbod2002/lcp/internal/pkg/id"
-	usecasePublication "github.com/Mehrbod2002/lcp/internal/usecase/lcp/publication"
+	"github.com/amirhdev/ebook-lcp-server/internal/auth"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/pkg/id"
+	usecasePublication "github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/publication"
 )
 
 type PublicationHandler struct {

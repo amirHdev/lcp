@@ -6,7 +6,7 @@ metadata:
 spec:
   project: lcp
   source:
-    repoURL: https://github.com/amirHdev/lcp.git
+    repoURL: https://github.com/amirhdev/ebook-lcp-server.git
     targetRevision: main
     path: deploy/overlays/staging
   destination:

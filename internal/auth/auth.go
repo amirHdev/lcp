@@ -153,7 +153,7 @@ func roleAllowed(claims *Claims, allowed map[string]struct{}) bool {
 }
 
 func hasRole(claims *Claims, role string) bool {
-	return roleAllowed(claims, map[string]struct{}{strings.ToLower(role): struct{}{}})
+	return roleAllowed(claims, map[string]struct{}{strings.ToLower(role): {}})
 }
 
 func requiresTwoFactor(r *http.Request) bool {

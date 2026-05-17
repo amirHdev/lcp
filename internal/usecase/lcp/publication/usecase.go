@@ -6,15 +6,16 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/Mehrbod2002/lcp/internal/domain/lcp"
-	"github.com/Mehrbod2002/lcp/internal/lcp/encrypt"
-	"github.com/Mehrbod2002/lcp/internal/pkg/id"
+	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/lcp/encrypt"
+	"github.com/amirhdev/ebook-lcp-server/internal/pkg/id"
 )
 
 type PublicationUsecase interface {
@@ -110,7 +111,11 @@ func detectZipPublicationExt(raw []byte) string {
 			if err != nil {
 				return ""
 			}
-			defer rc.Close()
+			defer func() {
+				if err := rc.Close(); err != nil {
+					log.Printf("close rows: %v", err)
+				}
+			}()
 			mimeBytes, err := io.ReadAll(rc)
 			if err != nil {
 				return ""
