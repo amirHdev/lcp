@@ -219,6 +219,12 @@ docker build -t lcp-server:local .
 docker run -p 8080:8080 --env-file .env lcp-server:local
 ```
 
+Published image:
+
+```bash
+docker pull ghcr.io/amirhdev/ebook-lcp-server:latest
+```
+
 Kubernetes:
 
 ```bash
