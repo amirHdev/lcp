@@ -7,8 +7,7 @@ The core server work is in place now: local Compose stack, Readium sidecars, Pos
 | Item | Status |
 | --- | --- |
 | Real screenshots and one short demo GIF | Planned |
-| Hosted OpenAPI docs | Planned |
-| Reader demos for Thorium, Readium Swift, and Android | Planned |
+| Reader demos for Readium Swift and Android | Planned |
 | Small CLI for common tasks | Planned |
 | SDKs after the API settles | Planned |
 

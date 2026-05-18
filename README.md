@@ -3,7 +3,7 @@
 [![CodeQL](https://github.com/amirHdev/ebook-lcp-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/amirHdev/ebook-lcp-server/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/amirHdev/ebook-lcp-server)](https://github.com/amirHdev/ebook-lcp-server/releases)
 [![License](https://img.shields.io/github/license/amirHdev/ebook-lcp-server)](https://github.com/amirHdev/ebook-lcp-server/blob/main/LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue?logo=docker)](https://github.com/amirHdev/ebook-lcp-server/pkgs/container/ebook-lcp-server)
+[![Docker image](https://img.shields.io/badge/docker-ghcr.io%2Famirhdev%2Febook--lcp--server-blue?logo=docker)](https://github.com/amirHdev/ebook-lcp-server/pkgs/container/ebook-lcp-server)
 
 Protect EPUB and PDF files with Readium LCP DRM.
 
@@ -14,6 +14,10 @@ Protect EPUB and PDF files with Readium LCP DRM.
 - Docker ready
 - PostgreSQL support
 - Works with Thorium Reader
+
+```bash
+docker pull ghcr.io/amirhdev/ebook-lcp-server:latest
+```
 
 ```bash
 docker compose up --build
@@ -114,6 +118,8 @@ Docs endpoints:
 - `http://localhost:8080/docs/openapi.yaml`
 - `http://localhost:8080/docs/swagger.json`
 
+Public API docs: `https://amirhdev.github.io/ebook-lcp-server/`
+
 Postman collection: `docs/postman/lcp-server.postman_collection.json`
 
 ## Example book
@@ -130,7 +136,23 @@ See `examples/pride-and-prejudice/README.md` for the demo notes.
 
 ## Reader compatibility
 
-The flow is based on Readium LCP and is intended for LCP-compatible readers such as Thorium Reader. Fixtures used while checking compatibility live under `examples/lcp-fixtures`.
+The flow is based on Readium LCP and is intended for LCP-compatible readers such as Thorium Reader. See `docs/reader-compatibility.md` for the current compatibility matrix and the remaining demo work. Fixtures used while checking compatibility live under `examples/lcp-fixtures`.
+
+## Compared with `readium/readium-lcp-server`
+
+The official Readium server is the reference implementation. This project takes a more batteries-included path around the same LCP ecosystem.
+
+| Area | `ebook-lcp-server` | `readium/readium-lcp-server` |
+| --- | --- | --- |
+| Main focus | Self-hosted API service with a ready local stack | Reference LCP server components |
+| Local start | One Compose stack for API, PostgreSQL, MinIO, Swagger UI, and Readium sidecars | Install and run separate Go binaries |
+| API surface | REST and GraphQL around publications, licenses, admin tasks, metrics, and docs | License server and status server APIs |
+| Storage path | Filesystem or S3-compatible storage, including signed URLs | Filesystem or S3 through `lcpencrypt` |
+| Database path | PostgreSQL-first in the local stack | SQLite, MySQL, SQL Server, or PostgreSQL |
+| Multi-tenant behavior | Tenant scoping, tenant API keys, tenant webhooks, storage prefixes, and rate limits | Not presented as a built-in tenant layer in the upstream README |
+| Developer extras | README demo, Compose stack, Postman collection, hosted docs, audit logs, webhooks, metrics | Upstream CLI/server components and test frontend |
+
+Use the official project when you want the upstream reference pieces directly. Use this repo when you want a more packaged self-hosted service around them.
 
 ## Configuration
 
