@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	repo "github.com/amirhdev/ebook-lcp-server/internal/adapter/repository/audit"
+	"github.com/amirhdev/ebook-lcp-server/internal/tenant"
 )
 
 type AuditHandler struct {
@@ -24,7 +25,7 @@ func (h *AuditHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if limit <= 0 {
 		limit = 100
 	}
-	entries, err := h.repo.FindRecent(r.Context(), limit)
+	entries, err := h.repo.FindRecentByTenant(r.Context(), tenant.IDFromContext(r.Context()), limit)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

@@ -23,8 +23,8 @@ services:
 
   lcp-core:
     build: .
+    entrypoint: ["/bin/sh"]
     command:
-      - /bin/sh
       - -c
       - sh /srv/lcp/scripts/compose/prepare-readium-config.sh && exec /usr/local/bin/lcpserver
     environment:
@@ -40,8 +40,8 @@ services:
 
   lsd-core:
     build: .
+    entrypoint: ["/bin/sh"]
     command:
-      - /bin/sh
       - -c
       - sh /srv/lcp/scripts/compose/prepare-readium-config.sh && exec /usr/local/bin/lsdserver
     environment:
@@ -93,12 +93,12 @@ services:
       ADMIN_2FA_CODE: "123456"
       PUBLISHER_USERNAME: publisher
       PUBLISHER_PASSWORD: publisher
-      LCP_PROVIDER_URI: http://localhost:8080
+      LCP_PROVIDER_URI: http://127.0.0.1:8080
       LCP_CORE_URL: http://lcp-core:8989
       LCP_CORE_USER: admin
       LCP_CORE_PASSWORD: admin_pass
       SERVER_PORT: :8080
-      PUBLIC_BASE_URL: http://localhost:8080
+      PUBLIC_BASE_URL: http://127.0.0.1:8080
       STATUS_BASE_URL: http://lsd-core:8990
       DATA_DIR: /var/lib/lcp/data
       LCP_STORAGE_MODE: s3

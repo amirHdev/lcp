@@ -220,6 +220,12 @@ Kubernetes:
 kubectl apply -k deploy/overlays/prod
 ```
 
+Hosted deployment guides:
+
+- `docs/deploy.md`
+- `docs/deploy-flyio.md`
+- `docs/deploy-railway.md`
+
 K3s scripts, ArgoCD files, monitoring manifests, and production notes are also in the repo.
 
 ## Roadmap

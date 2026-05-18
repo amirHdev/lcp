@@ -8,6 +8,7 @@ import (
 	"github.com/amirhdev/ebook-lcp-server/internal/auth"
 	domain "github.com/amirhdev/ebook-lcp-server/internal/domain"
 	"github.com/amirhdev/ebook-lcp-server/internal/pkg/id"
+	"github.com/amirhdev/ebook-lcp-server/internal/tenant"
 )
 
 type Recorder interface {
@@ -29,6 +30,7 @@ func (s *Service) Record(ctx context.Context, action, resource, resourceID strin
 	}
 	return s.repo.Save(ctx, &domain.AuditEntry{
 		ID:         id.New(),
+		TenantID:   tenant.IDFromContext(ctx),
 		Action:     action,
 		Actor:      actor,
 		Resource:   resource,

@@ -59,3 +59,7 @@ trivy fs .
 # Run production stack
 docker compose -f docker-compose.prod.yml up -d
 ```
+
+## 5. Operational checks
+
+For backup verification, load-test smoke runs, and upgrade/rollback steps, see `docs/operations.md`.

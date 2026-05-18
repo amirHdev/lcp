@@ -10,14 +10,14 @@ cms_access_auth:
   password: ""
 lcp:
   host: "0.0.0.0"
-  public_base_url: "http://localhost:8989"
+  public_base_url: "http://127.0.0.1:8989"
 lsd:
   host: "0.0.0.0"
   port: 8990
-  public_base_url: "http://localhost:8990"
+  public_base_url: "http://127.0.0.1:8990"
   database: "sqlite3://file:/srv/readium/data/lsd.sqlite?cache=shared&mode=rwc"
   auth_file: "/srv/readium/config/htpasswd"
-  license_link_url: "http://localhost:8990/licenses/{license_id}"
+  license_link_url: "http://127.0.0.1:8990/licenses/{license_id}"
   user_data_url: "http://lcp-server:8080/api/v1/licenses/{license_id}/user"
 license_status:
   register: true

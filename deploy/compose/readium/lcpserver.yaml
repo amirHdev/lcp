@@ -8,14 +8,14 @@ lsd_notify_auth:
 lcp:
   host: "0.0.0.0"
   port: 8989
-  public_base_url: "http://localhost:8989"
+  public_base_url: "http://127.0.0.1:8989"
   auth_file: "/srv/readium/config/htpasswd"
   database: "sqlite3://file:/srv/readium/data/lcp.sqlite?cache=shared&mode=rwc"
 lsd:
-  public_base_url: "http://localhost:8990"
+  public_base_url: "http://127.0.0.1:8990"
 certificate:
   cert: "/srv/readium/config/cert-edrlab-test.pem"
   private_key: "/srv/readium/config/privkey-edrlab-test.pem"
 license:
   links:
-    status: "http://localhost:8990/licenses/{license_id}/status"
+    status: "http://127.0.0.1:8990/licenses/{license_id}/status"

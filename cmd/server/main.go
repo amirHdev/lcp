@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -21,6 +23,7 @@ import (
 	lcpencrypt "github.com/amirhdev/ebook-lcp-server/internal/lcp/encrypt"
 	lcplicense "github.com/amirhdev/ebook-lcp-server/internal/lcp/license"
 	"github.com/amirhdev/ebook-lcp-server/internal/ratelimit"
+	"github.com/amirhdev/ebook-lcp-server/internal/requestmeta"
 	publicationstorage "github.com/amirhdev/ebook-lcp-server/internal/storage"
 	"github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/license"
 	"github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/publication"
@@ -36,6 +39,8 @@ import (
 // @in header
 // @name Authorization
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		panic(err)
@@ -73,25 +78,29 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	auditRepo, err := buildAuditRepository(cfg)
+	auditRepo, err := buildAuditRepository(cfg, db)
 	if err != nil {
 		panic(err)
 	}
-	publicationStorage, err := buildPublicationStorage(cfg)
+	tenantStore := rest.NewTenantStore(cfg.DataDir, cfg.Tenant.DefaultID)
+	publicationStorage, err := buildPublicationStorage(cfg, tenantStore)
 	if err != nil {
 		panic(err)
 	}
-	webhookPublisher := webhook.NewHTTPPublisher(cfg.Webhooks.URLs, cfg.Webhooks.Secret)
+	webhookPublisher := buildWebhookPublisher(cfg, tenantStore)
 	auditSvc := auditservice.NewService(auditRepo)
 	pubUsecase := publication.NewPublicationUsecase(pubRepo, lcpEnc, publicationStorage, webhookPublisher, auditSvc)
 	publicBaseURL := buildBaseURL(cfg)
 	licUsecase := license.NewLicenseUsecase(licRepo, pubRepo, buildUserRepository(cfg, db), lcpEnc, lcpSrv, publicBaseURL, webhookPublisher, auditSvc)
-	authn := auth.New(cfg.JWT.Secret, cfg.JWT.Admin2FACode, ratelimit.New(cfg.Server.RateLimitRPM, time.Minute))
-	restHandler := rest.NewHandler(pubRepo, pubUsecase, buildReadyCheck(db))
+	authn := auth.New(cfg.JWT.Secret, cfg.JWT.Admin2FACode, ratelimit.New(cfg.Server.RateLimitRPM, time.Minute)).
+		WithAPIKeys(buildAPIKeyResolver(tenantStore)).
+		WithTenantRateLimits(buildTenantRateLimitResolver(tenantStore))
+	restHandler := rest.NewHandler(pubRepo, pubUsecase, buildReadyCheck(db, publicationStorage))
 	authHandler := rest.NewAuthHandler(cfg.JWT.Secret, cfg.Admin.Username, cfg.Admin.Password, cfg.Publisher.Username, cfg.Publisher.Password, cfg.JWT.Admin2FACode, cfg.Tenant.DefaultID)
 	publicationHandler := rest.NewPublicationHandler(pubRepo, pubUsecase)
 	userStore := rest.NewAdminUserStore(cfg.DataDir)
 	adminUsersHandler := rest.NewAdminUsersHandler(userStore)
+	adminTenantsHandler := rest.NewAdminTenantsHandler(tenantStore)
 	auditHandler := rest.NewAuditHandler(auditRepo)
 
 	mux := http.NewServeMux()
@@ -132,6 +141,8 @@ func main() {
 	mux.Handle("/api/v1/admin/metrics", authn.RequireRole("admin")(http.HandlerFunc(restHandler.Metrics)))
 	mux.Handle("/api/v1/admin/users", authn.RequireRole("admin")(adminUsersHandler))
 	mux.Handle("/api/v1/admin/users/", authn.RequireRole("admin")(adminUsersHandler))
+	mux.Handle("/api/v1/admin/tenants", authn.RequireRole("admin")(adminTenantsHandler))
+	mux.Handle("/api/v1/admin/tenants/", authn.RequireRole("admin")(adminTenantsHandler))
 	mux.Handle("/api/v1/admin/audit", authn.RequireRole("admin")(auditHandler))
 
 	gqlHandler := graphql.NewHandler(&graphql.Resolver{
@@ -147,8 +158,8 @@ func main() {
 		port = ":8080"
 	}
 
-	log.Printf("lcp server listening on %s", port)
-	if err := http.ListenAndServe(port, mux); err != nil {
+	slog.Info("server_listening", "port", port)
+	if err := http.ListenAndServe(port, requestmeta.Middleware(logger)(mux)); err != nil {
 		panic(err)
 	}
 }
@@ -180,7 +191,10 @@ func buildLicenseRepository(cfg *config.Config, db *sql.DB) (lcp.LicenseReposito
 	return lcp.NewPersistentLicenseRepository(filepath.Join(cfg.DataDir, "licenses.json"))
 }
 
-func buildAuditRepository(cfg *config.Config) (auditrepo.Repository, error) {
+func buildAuditRepository(cfg *config.Config, db *sql.DB) (auditrepo.Repository, error) {
+	if db != nil {
+		return lcp.NewPostgresAuditRepository(db), nil
+	}
 	if cfg.DataDir == "" {
 		return auditrepo.NewRepository(), nil
 	}
@@ -194,20 +208,103 @@ func buildUserRepository(cfg *config.Config, db *sql.DB) userdomain.UserReposito
 	return nil
 }
 
-func buildPublicationStorage(cfg *config.Config) (publicationstorage.PublicationStorage, error) {
+func buildPublicationStorage(cfg *config.Config, tenants *rest.TenantStore) (publicationstorage.PublicationStorage, error) {
 	if strings.EqualFold(strings.TrimSpace(cfg.LCP.Storage.Mode), "s3") {
-		return publicationstorage.NewS3PublicationStorage(cfg)
+		store, err := publicationstorage.NewS3PublicationStorage(cfg)
+		if err != nil {
+			return nil, err
+		}
+		return store.WithPrefixResolver(func(ctx context.Context) string {
+			if tenant, ok := tenants.Get(tenantIDFromContext(ctx)); ok {
+				return tenant.StoragePrefix
+			}
+			return ""
+		}), nil
 	}
 	return publicationstorage.NewFilesystemPublicationStorage(), nil
 }
 
-func buildReadyCheck(db *sql.DB) func(context.Context) error {
-	if db == nil {
+func buildReadyCheck(db *sql.DB, store publicationstorage.PublicationStorage) func(context.Context) error {
+	return func(ctx context.Context) error {
+		if db != nil {
+			if err := db.PingContext(ctx); err != nil {
+				return err
+			}
+		}
+		if store != nil {
+			return store.Ready(ctx)
+		}
 		return nil
 	}
-	return func(ctx context.Context) error {
-		return db.PingContext(ctx)
+}
+
+func buildWebhookFailureRecorder(cfg *config.Config) webhook.FailureRecorder {
+	if strings.TrimSpace(cfg.DataDir) == "" {
+		return &webhook.MemoryFailureRecorder{}
 	}
+	return webhook.NewPersistentFailureRecorder(filepath.Join(cfg.DataDir, "webhook-failures.json"))
+}
+
+func buildWebhookPublisher(cfg *config.Config, tenants *rest.TenantStore) webhook.Publisher {
+	publisher := webhook.NewHTTPPublisherWithOptions(
+		cfg.Webhooks.URLs,
+		cfg.Webhooks.Secret,
+		cfg.Webhooks.MaxAttempts,
+		time.Duration(cfg.Webhooks.RetryBackoffMS)*time.Millisecond,
+		buildWebhookFailureRecorder(cfg),
+	)
+	httpPublisher, ok := publisher.(*webhook.HTTPPublisher)
+	if !ok {
+		return publisher
+	}
+	return httpPublisher.WithURLResolver(func(ctx context.Context) []string {
+		if tenant, ok := tenants.Get(tenantIDFromContext(ctx)); ok {
+			return tenant.WebhookURLs
+		}
+		return nil
+	})
+}
+
+func buildAPIKeyResolver(tenants *rest.TenantStore) auth.APIKeyResolver {
+	return func(key string) (*auth.Claims, bool) {
+		for _, tenant := range tenants.List() {
+			for _, apiKey := range tenant.APIKeys {
+				if apiKey.Key == key {
+					role := strings.TrimSpace(apiKey.Role)
+					if role == "" {
+						role = "publisher"
+					}
+					subject := strings.TrimSpace(apiKey.Subject)
+					if subject == "" {
+						subject = "api-key"
+					}
+					return &auth.Claims{
+						Subject:  subject,
+						TenantID: tenant.ID,
+						Role:     role,
+						Roles:    []string{role},
+					}, true
+				}
+			}
+		}
+		return nil, false
+	}
+}
+
+func buildTenantRateLimitResolver(tenants *rest.TenantStore) auth.RateLimitResolver {
+	return func(tenantID string) int {
+		if tenant, ok := tenants.Get(tenantID); ok {
+			return tenant.RateLimitRPM
+		}
+		return 0
+	}
+}
+
+func tenantIDFromContext(ctx context.Context) string {
+	if claims, ok := auth.FromContext(ctx); ok && claims.TenantID != "" {
+		return claims.TenantID
+	}
+	return "default"
 }
 
 func buildBaseURL(cfg *config.Config) string {
@@ -252,6 +349,8 @@ func publicationDownloadHandler(pubUsecase publication.PublicationUsecase, store
 			pubID = parts[1]
 		} else if len(parts) == 2 && parts[0] == "publications" && strings.HasSuffix(parts[1], ".lcpdf") {
 			pubID = strings.TrimSuffix(parts[1], ".lcpdf")
+		} else if len(parts) == 2 && parts[0] == "publications" && strings.HasSuffix(parts[1], ".epub") {
+			pubID = strings.TrimSuffix(parts[1], ".epub")
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 			return

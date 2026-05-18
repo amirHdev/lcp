@@ -59,6 +59,10 @@ func (s fakeStorage) SignedURL(_ context.Context, _ string, _ time.Duration) (st
 	return "", false, nil
 }
 
+func (s fakeStorage) Ready(context.Context) error {
+	return nil
+}
+
 func TestUploadAndEncryptCreatesPublication(t *testing.T) {
 	dir := t.TempDir()
 

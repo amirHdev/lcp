@@ -10,6 +10,7 @@ import (
 	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
 	lcpencrypt "github.com/amirhdev/ebook-lcp-server/internal/lcp/encrypt"
 	lcplicense "github.com/amirhdev/ebook-lcp-server/internal/lcp/license"
+	"github.com/amirhdev/ebook-lcp-server/internal/observability"
 	"github.com/amirhdev/ebook-lcp-server/internal/pkg/id"
 	"github.com/amirhdev/ebook-lcp-server/internal/tenant"
 	"github.com/amirhdev/ebook-lcp-server/internal/webhook"
@@ -109,6 +110,7 @@ func (u *licenseUsecase) Create(ctx context.Context, input *lcp.LicenseInput) (*
 		}
 	}
 	if err != nil {
+		observability.IncLicensesFailed()
 		return nil, err
 	}
 	if license.ID == "" {
@@ -118,8 +120,10 @@ func (u *licenseUsecase) Create(ctx context.Context, input *lcp.LicenseInput) (*
 	// Save license to database
 	err = u.repo.Save(ctx, license)
 	if err != nil {
+		observability.IncLicensesFailed()
 		return nil, err
 	}
+	observability.IncLicensesOK()
 	_ = u.hooks.Publish(ctx, webhook.Event{
 		Type:      webhook.EventLicenseCreated,
 		CreatedAt: time.Now(),

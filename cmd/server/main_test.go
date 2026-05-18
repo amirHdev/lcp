@@ -43,6 +43,10 @@ func (fakeSignedStorage) SignedURL(context.Context, string, time.Duration) (stri
 	return "http://localhost:9000/books/publications/book.epub?signature=ok", true, nil
 }
 
+func (fakeSignedStorage) Ready(context.Context) error {
+	return nil
+}
+
 func TestPublicationDownloadHandlerRedirectsToSignedURL(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.LCP.Storage.S3.SignedURLTTLSecs = 900
@@ -64,5 +68,25 @@ func TestPublicationDownloadHandlerRedirectsToSignedURL(t *testing.T) {
 	location := rec.Header().Get("Location")
 	if !strings.Contains(location, "signature=ok") {
 		t.Fatalf("unexpected redirect location: %s", location)
+	}
+}
+
+func TestPublicationDownloadHandlerAcceptsEpubPathFromLCPL(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.LCP.Storage.S3.SignedURLTTLSecs = 900
+	handler := publicationDownloadHandler(fakePublicationUsecase{
+		pub: &lcp.Publication{
+			ID:           "book",
+			EncryptedURI: "s3://books/publications/book.epub",
+		},
+	}, fakeSignedStorage{}, cfg)
+
+	req := httptest.NewRequest(http.MethodGet, "/publications/book.epub", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusTemporaryRedirect {
+		t.Fatalf("expected %d, got %d", http.StatusTemporaryRedirect, rec.Code)
 	}
 }

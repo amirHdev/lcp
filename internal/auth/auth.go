@@ -9,8 +9,10 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/amirhdev/ebook-lcp-server/internal/observability"
 	"github.com/amirhdev/ebook-lcp-server/internal/ratelimit"
 )
 
@@ -33,6 +35,9 @@ type Claims struct {
 	Exp      int64    `json:"exp,omitempty"`
 }
 
+type APIKeyResolver func(key string) (*Claims, bool)
+type RateLimitResolver func(tenantID string) int
+
 func FromContext(ctx context.Context) (*Claims, bool) {
 	claims, ok := ctx.Value(claimsContextKey).(*Claims)
 	return claims, ok
@@ -46,10 +51,29 @@ type Middleware struct {
 	secret       string
 	admin2FACode string
 	limiter      *ratelimit.Limiter
+	apiKeys      APIKeyResolver
+	tenantLimits RateLimitResolver
+	tenantBucket map[string]*ratelimit.Limiter
+	mu           sync.Mutex
 }
 
 func New(secret, admin2FACode string, limiter *ratelimit.Limiter) *Middleware {
-	return &Middleware{secret: strings.TrimSpace(secret), admin2FACode: strings.TrimSpace(admin2FACode), limiter: limiter}
+	return &Middleware{
+		secret:       strings.TrimSpace(secret),
+		admin2FACode: strings.TrimSpace(admin2FACode),
+		limiter:      limiter,
+		tenantBucket: map[string]*ratelimit.Limiter{},
+	}
+}
+
+func (m *Middleware) WithAPIKeys(resolver APIKeyResolver) *Middleware {
+	m.apiKeys = resolver
+	return m
+}
+
+func (m *Middleware) WithTenantRateLimits(resolver RateLimitResolver) *Middleware {
+	m.tenantLimits = resolver
+	return m
 }
 
 func (m *Middleware) RequireRole(roles ...string) func(http.Handler) http.Handler {
@@ -73,7 +97,7 @@ func (m *Middleware) RequireRole(roles ...string) func(http.Handler) http.Handle
 				writeAuthError(w, http.StatusForbidden, errors.New("invalid admin 2fa code"))
 				return
 			}
-			if !m.limiter.Allow(rateLimitKey(r, claims)) {
+			if !m.allow(r, claims) {
 				writeAuthError(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
 				return
 			}
@@ -89,6 +113,22 @@ func rateLimitKey(r *http.Request, claims *Claims) string {
 	return r.RemoteAddr
 }
 
+func (m *Middleware) allow(r *http.Request, claims *Claims) bool {
+	if claims != nil && claims.TenantID != "" && m.tenantLimits != nil {
+		if limit := m.tenantLimits(claims.TenantID); limit > 0 {
+			m.mu.Lock()
+			limiter, ok := m.tenantBucket[claims.TenantID]
+			if !ok {
+				limiter = ratelimit.New(limit, time.Minute)
+				m.tenantBucket[claims.TenantID] = limiter
+			}
+			m.mu.Unlock()
+			return limiter.Allow(rateLimitKey(r, claims))
+		}
+	}
+	return m.limiter.Allow(rateLimitKey(r, claims))
+}
+
 func (m *Middleware) Optional(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims, err := m.parseRequest(r)
@@ -100,6 +140,12 @@ func (m *Middleware) Optional(next http.Handler) http.Handler {
 }
 
 func (m *Middleware) parseRequest(r *http.Request) (*Claims, error) {
+	if key := strings.TrimSpace(r.Header.Get("X-API-Key")); key != "" && m.apiKeys != nil {
+		if claims, ok := m.apiKeys(key); ok {
+			return claims, nil
+		}
+		return nil, ErrInvalidToken
+	}
 	header := r.Header.Get("Authorization")
 	if !strings.HasPrefix(strings.ToLower(header), "bearer ") {
 		return nil, ErrMissingToken
@@ -182,6 +228,7 @@ func sign(input, secret string) string {
 }
 
 func writeAuthError(w http.ResponseWriter, status int, err error) {
+	observability.IncAuthFailed()
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

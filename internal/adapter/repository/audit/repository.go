@@ -13,6 +13,7 @@ import (
 type Repository interface {
 	Save(ctx context.Context, entry *domain.AuditEntry) error
 	FindRecent(ctx context.Context, limit int) ([]*domain.AuditEntry, error)
+	FindRecentByTenant(ctx context.Context, tenantID string, limit int) ([]*domain.AuditEntry, error)
 }
 
 type repository struct {
@@ -49,6 +50,18 @@ func (r *repository) FindRecent(_ context.Context, limit int) ([]*domain.AuditEn
 	result := make([]*domain.AuditEntry, 0, limit)
 	for i := len(r.entries) - 1; i >= 0 && len(result) < limit; i-- {
 		result = append(result, r.entries[i])
+	}
+	return result, nil
+}
+
+func (r *repository) FindRecentByTenant(_ context.Context, tenantID string, limit int) ([]*domain.AuditEntry, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	result := make([]*domain.AuditEntry, 0, limit)
+	for i := len(r.entries) - 1; i >= 0 && (limit <= 0 || len(result) < limit); i-- {
+		if r.entries[i].TenantID == tenantID {
+			result = append(result, r.entries[i])
+		}
 	}
 	return result, nil
 }

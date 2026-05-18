@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
+	"github.com/amirhdev/ebook-lcp-server/internal/observability"
 	"github.com/amirhdev/ebook-lcp-server/internal/pkg/id"
 	usecasePublication "github.com/amirhdev/ebook-lcp-server/internal/usecase/lcp/publication"
 )
@@ -166,6 +167,7 @@ func (h *Handler) PrometheusMetrics(w http.ResponseWriter, r *http.Request) {
 	processes := len(h.processes)
 	uptime := int64(time.Since(h.startedAt).Seconds())
 	h.mu.RUnlock()
+	ops := observability.Current()
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
 	_, _ = fmt.Fprintf(w, "# HELP lcp_uptime_seconds Service uptime in seconds\n")
@@ -181,6 +183,17 @@ func (h *Handler) PrometheusMetrics(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "# TYPE lcp_process_results_total counter\n")
 	_, _ = fmt.Fprintf(w, "lcp_process_results_total{status=\"ok\"} %d\n", metrics.ProcessesOK)
 	_, _ = fmt.Fprintf(w, "lcp_process_results_total{status=\"failed\"} %d\n", metrics.ProcessesFail)
+	_, _ = fmt.Fprintf(w, "lcp_webhook_deliveries_total{status=\"ok\"} %d\n", ops.WebhookOK)
+	_, _ = fmt.Fprintf(w, "lcp_webhook_deliveries_total{status=\"failed\"} %d\n", ops.WebhookFailed)
+	_, _ = fmt.Fprintf(w, "lcp_s3_operations_total{operation=\"store\",status=\"ok\"} %d\n", ops.S3StoreOK)
+	_, _ = fmt.Fprintf(w, "lcp_s3_operations_total{operation=\"store\",status=\"failed\"} %d\n", ops.S3StoreFailed)
+	_, _ = fmt.Fprintf(w, "lcp_s3_operations_total{operation=\"open\",status=\"ok\"} %d\n", ops.S3OpenOK)
+	_, _ = fmt.Fprintf(w, "lcp_s3_operations_total{operation=\"open\",status=\"failed\"} %d\n", ops.S3OpenFailed)
+	_, _ = fmt.Fprintf(w, "lcp_s3_operations_total{operation=\"signed_url\",status=\"ok\"} %d\n", ops.S3SignedURLOK)
+	_, _ = fmt.Fprintf(w, "lcp_s3_operations_total{operation=\"signed_url\",status=\"failed\"} %d\n", ops.S3SignedURLFail)
+	_, _ = fmt.Fprintf(w, "lcp_license_generation_total{status=\"ok\"} %d\n", ops.LicensesOK)
+	_, _ = fmt.Fprintf(w, "lcp_license_generation_total{status=\"failed\"} %d\n", ops.LicensesFailed)
+	_, _ = fmt.Fprintf(w, "lcp_auth_failures_total %d\n", ops.AuthFailed)
 }
 
 func (h *Handler) Healthz(w http.ResponseWriter, _ *http.Request) {

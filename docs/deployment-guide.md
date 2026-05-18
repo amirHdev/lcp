@@ -60,3 +60,5 @@ The deployment exposes:
 ## Load Testing
 
 Use k6 or JMeter against `/api/v1/lcp/status` and `/api/v1/lcp/process` with valid JWTs. The contract target is p95 below 200 ms under 100 concurrent users and 1000 RPS in optimized conditions.
+
+For the repeatable smoke version used by this repository, run `scripts/loadtest-smoke.js` as described in `docs/operations.md`.

@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"strconv"
 	"time"
 
+	rootdomain "github.com/amirhdev/ebook-lcp-server/internal/domain"
 	userdomain "github.com/amirhdev/ebook-lcp-server/internal/domain"
 	domain "github.com/amirhdev/ebook-lcp-server/internal/domain/lcp"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -21,6 +23,10 @@ type postgresLicenseRepository struct {
 }
 
 type postgresUserRepository struct {
+	db *sql.DB
+}
+
+type postgresAuditRepository struct {
 	db *sql.DB
 }
 
@@ -100,6 +106,15 @@ func EnsurePostgresSchema(ctx context.Context, db *sql.DB) error {
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (publication_id) REFERENCES publications(id)
 		)`,
+		`CREATE TABLE IF NOT EXISTS audit_entries (
+			id VARCHAR(36) PRIMARY KEY,
+			tenant_id TEXT NOT NULL DEFAULT 'default',
+			action TEXT NOT NULL,
+			actor TEXT NOT NULL,
+			resource TEXT NOT NULL,
+			resource_id TEXT NOT NULL,
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`ALTER TABLE publications ADD COLUMN IF NOT EXISTS authors JSONB NOT NULL DEFAULT '[]'::jsonb`,
 		`ALTER TABLE publications ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default'`,
 		`ALTER TABLE publications ADD COLUMN IF NOT EXISTS language TEXT NOT NULL DEFAULT ''`,
@@ -135,6 +150,57 @@ func NewPostgresLicenseRepository(db *sql.DB) LicenseRepository {
 
 func NewPostgresUserRepository(db *sql.DB) userdomain.UserRepository {
 	return &postgresUserRepository{db: db}
+}
+
+func NewPostgresAuditRepository(db *sql.DB) *postgresAuditRepository {
+	return &postgresAuditRepository{db: db}
+}
+
+func (r *postgresAuditRepository) Save(ctx context.Context, entry *rootdomain.AuditEntry) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO audit_entries (id, tenant_id, action, actor, resource, resource_id, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`, entry.ID, entry.TenantID, entry.Action, entry.Actor, entry.Resource, entry.ResourceID, entry.CreatedAt)
+	return err
+}
+
+func (r *postgresAuditRepository) FindRecent(ctx context.Context, limit int) ([]*rootdomain.AuditEntry, error) {
+	return r.findRecent(ctx, "", limit)
+}
+
+func (r *postgresAuditRepository) FindRecentByTenant(ctx context.Context, tenantID string, limit int) ([]*rootdomain.AuditEntry, error) {
+	return r.findRecent(ctx, tenantID, limit)
+}
+
+func (r *postgresAuditRepository) findRecent(ctx context.Context, tenantID string, limit int) ([]*rootdomain.AuditEntry, error) {
+	query := `
+		SELECT id, tenant_id, action, actor, resource, resource_id, created_at
+		FROM audit_entries
+	`
+	args := []any{}
+	if tenantID != "" {
+		query += ` WHERE tenant_id = $1`
+		args = append(args, tenantID)
+	}
+	query += ` ORDER BY created_at DESC`
+	if limit > 0 {
+		query += ` LIMIT $` + strconv.Itoa(len(args)+1)
+		args = append(args, limit)
+	}
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var entries []*rootdomain.AuditEntry
+	for rows.Next() {
+		entry := &rootdomain.AuditEntry{}
+		if err := rows.Scan(&entry.ID, &entry.TenantID, &entry.Action, &entry.Actor, &entry.Resource, &entry.ResourceID, &entry.CreatedAt); err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+	return entries, rows.Err()
 }
 
 func (r *postgresPublicationRepository) Save(ctx context.Context, pub *domain.Publication) error {

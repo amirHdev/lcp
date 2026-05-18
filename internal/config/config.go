@@ -57,8 +57,10 @@ type Config struct {
 		RateLimitRPM  int
 	}
 	Webhooks struct {
-		URLs   []string
-		Secret string
+		URLs           []string
+		Secret         string
+		MaxAttempts    int
+		RetryBackoffMS int
 	}
 	DataDir string
 }
@@ -96,6 +98,8 @@ func LoadConfig() (*Config, error) {
 	cfg.Server.RateLimitRPM = envInt("RATE_LIMIT_RPM", 600)
 	cfg.Webhooks.URLs = splitCSV(os.Getenv("WEBHOOK_URLS"))
 	cfg.Webhooks.Secret = os.Getenv("WEBHOOK_SECRET")
+	cfg.Webhooks.MaxAttempts = envInt("WEBHOOK_MAX_ATTEMPTS", 3)
+	cfg.Webhooks.RetryBackoffMS = envInt("WEBHOOK_RETRY_BACKOFF_MS", 250)
 	cfg.DataDir = os.Getenv("DATA_DIR")
 	return cfg, nil
 }

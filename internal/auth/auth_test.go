@@ -104,6 +104,59 @@ func TestRequireRoleAppliesRateLimit(t *testing.T) {
 	}
 }
 
+func TestRequireRoleAcceptsTenantAPIKey(t *testing.T) {
+	mw := New("secret", "", nil).WithAPIKeys(func(key string) (*Claims, bool) {
+		if key != "tenant-key" {
+			return nil, false
+		}
+		return &Claims{Subject: "integration", TenantID: "tenant-a", Role: "publisher"}, true
+	})
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/lcp/status", nil)
+	req.Header.Set("X-API-Key", "tenant-key")
+	rec := httptest.NewRecorder()
+
+	handler := mw.RequireRole("publisher")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := FromContext(r.Context())
+		if !ok || claims.TenantID != "tenant-a" {
+			t.Fatal("expected tenant claims from api key")
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("unexpected status %d", rec.Code)
+	}
+}
+
+func TestRequireRoleUsesTenantRateLimit(t *testing.T) {
+	mw := New("secret", "", ratelimit.New(10, time.Minute)).
+		WithTenantRateLimits(func(tenantID string) int {
+			if tenantID == "tenant-a" {
+				return 1
+			}
+			return 0
+		})
+	token := buildTestToken(t, Claims{
+		Subject:  "publisher-1",
+		TenantID: "tenant-a",
+		Role:     "publisher",
+		Exp:      time.Now().Add(time.Hour).Unix(),
+	}, "secret")
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/lcp/status", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	handler := mw.RequireRole("publisher")(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	handler.ServeHTTP(httptest.NewRecorder(), req)
+	second := httptest.NewRecorder()
+	handler.ServeHTTP(second, req)
+	if second.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected %d, got %d", http.StatusTooManyRequests, second.Code)
+	}
+}
+
 func buildTestToken(t *testing.T, claims Claims, secret string) string {
 	t.Helper()
 	header, err := json.Marshal(map[string]string{"alg": "HS256", "typ": "JWT"})
